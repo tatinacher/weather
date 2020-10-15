@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import { useStart, withStart } from 'lib/page-routing';
 import * as model from './model';
+import { getWeather } from 'api/requests';
 
 export const HomePage = withStart(model.pageLoaded, () => {
   useStart(model.pageLoaded);
@@ -14,9 +15,30 @@ export const HomePage = withStart(model.pageLoaded, () => {
   const counterValue = useStore(model.$counterValue);
   const pagePending = useStore(model.$pagePending);
 
+  const [lat, setLat] = React.useState(0);
+  const [lon, setLon] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!(typeof navigator === 'undefined' || !('geolocation' in navigator))) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        console.log(position.coords.latitude, position.coords.longitude);
+
+        setLat(position.coords.latitude);
+        setLon(position.coords.longitude);
+
+        getWeather({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
+      });
+    }
+  }, []);
   return (
     <section>
-      <h2>Hello world! Effector SSR example</h2>
+      <h2>Weather app</h2>
+      <div>
+        latitude {lat}, longitude {lon}
+      </div>
       <div>
         <h4>Counter value: {counterValue}</h4>
         <Button disabled={pagePending} onClick={increment}>
