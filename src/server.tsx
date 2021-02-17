@@ -1,5 +1,6 @@
 import { performance } from 'perf_hooks';
 import express from 'express';
+import cookieParser from 'cookie-parser';
 
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
@@ -56,6 +57,7 @@ const syncLoadAssets = () => {
 syncLoadAssets();
 
 export const server = express()
+  .use(cookieParser())
   .disable('x-powered-by')
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   .use(express.static(process.env.RAZZLE_PUBLIC_DIR!))
@@ -78,7 +80,7 @@ export const server = express()
 
     const jsx = sheet.collectStyles(
       <StaticRouter context={context} location={req.url}>
-        <Application root={scope} />
+        <Application root={scope} cookie={req.cookies} />
       </StaticRouter>,
     );
 
@@ -109,7 +111,7 @@ function htmlStart(assetsCss: string, assetsJs: string) {
     <head>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta charSet='utf-8' />
-        <title>Razzle TypeScript</title>
+        <title>Weather</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         ${assetsCss ? `<link rel="stylesheet" href="${assetsCss}">` : ''}
           ${

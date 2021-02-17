@@ -1,54 +1,47 @@
 import * as React from 'react';
-import { useEvent, useStore } from 'effector-react/ssr';
+
+import { useStore, useEvent } from 'effector-react/ssr';
 import styled from 'styled-components';
 
 import { useStart, withStart } from 'lib/page-routing';
 import * as model from './model';
-import { getWeather } from 'api/requests';
+import { UNITS } from 'lib/constants';
 
 export const HomePage = withStart(model.pageLoaded, () => {
   useStart(model.pageLoaded);
 
-  const increment = useEvent(model.incrementClicked);
-  const reset = useEvent(model.resetClicked);
-
-  const counterValue = useStore(model.$counterValue);
-  const pagePending = useStore(model.$pagePending);
-
-  const [lat, setLat] = React.useState(0);
-  const [lon, setLon] = React.useState(0);
+  const weather = useStore(model.$weather);
+  const changeGeo = useEvent(model.changeGeo);
+  const geo = useStore(model.$geo);
+  const setError = useEvent(model.setError);
+  const units = useStore(model.$units);
+  const userUnit = UNITS[units];
 
   React.useEffect(() => {
     if (!(typeof navigator === 'undefined' || !('geolocation' in navigator))) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        console.log(position.coords.latitude, position.coords.longitude);
-
-        setLat(position.coords.latitude);
-        setLon(position.coords.longitude);
-
-        getWeather({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        });
-      });
+      if (typeof geo.lat === 'number' && typeof geo.lon === 'number') {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            changeGeo({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+            });
+          },
+          (error) => {
+            setError(error);
+          },
+          { timeout: 10000 },
+        );
+      }
     }
-  }, []);
+  }, [geo]);
   return (
-    <section>
-      <h2>Weather app</h2>
-      <div>
-        latitude {lat}, longitude {lon}
-      </div>
-      <div>
-        <h4>Counter value: {counterValue}</h4>
-        <Button disabled={pagePending} onClick={increment}>
-          Increment
-        </Button>
-        <Button disabled={pagePending} onClick={reset}>
-          Reset
-        </Button>
-      </div>
-    </section>
+    <Content>
+      <div>{weather.name}</div>
+      <Temerature>
+        {Math.round(weather?.main?.temp)} {userUnit}
+      </Temerature>
+    </Content>
   );
 });
 
@@ -57,4 +50,12 @@ const Button = styled.button`
   border: 1px solid lightblue;
   padding: 1rem;
   border-radius: 1rem;
+`;
+
+export const Content = styled.div`
+  color: #ffffff;
+`;
+
+export const Temerature = styled.div`
+  font-size: 40px;
 `;
